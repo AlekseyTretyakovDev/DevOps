@@ -1,0 +1,17 @@
+
+- name: Reload systemd daemon
+  become: yes
+  systemd:
+    daemon_reload: yes
+
+- name: Start pig_tretyakov service
+  become: yes
+  service:
+    name: pig_tretyakov.service
+    state: started
+
+- name: Enable pig_tretyakov service
+  become: yes
+  systemd:
+    name: pig_tretyakov.service
+    enabled: yes

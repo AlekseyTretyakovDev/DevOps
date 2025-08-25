@@ -1,0 +1,6 @@
+---
+# vars file for deploy-pig
+service_name: "pig_tretyakov"
+service_description: "Pig App Tretyakov"
+service_working_directory: "/home/student/tretyakov_am"
+service_exec_start: "/home/student/tretyakov_am/pig"

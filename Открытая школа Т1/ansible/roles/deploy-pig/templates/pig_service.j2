@@ -1,0 +1,15 @@
+[Unit]
+Description={{ service_description }}
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User={{ ansible_user }}
+Group={{ ansible_user }}
+
+Environment=PORT={{ app_port }}
+WorkingDirectory={{ service_working_directory }}
+ExecStart={{ service_exec_start }}
+
+[Install]
+WantedBy=multi-user.target

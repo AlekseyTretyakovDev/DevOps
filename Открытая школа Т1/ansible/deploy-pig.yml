@@ -1,0 +1,5 @@
+--- 
+- name: Copy PIG and run service daemon
+  hosts: test_server
+  roles:
+    - deploy-pig

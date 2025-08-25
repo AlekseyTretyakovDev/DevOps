@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "helm-pig.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ include "helm-pig.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "helm-pig.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "helm-pig.name" . }}
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        volumeMounts:
+          {{- toYaml .Values.volumeMounts | nindent 10 }}
+        env:
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              key: {{ .Values.env.PORT.configMapKeyRef.key }}
+              name: {{ .Values.env.PORT.configMapKeyRef.name }}
+        - name: RABBITMQ_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              key: {{ .Values.env.BROKER_ADDRESS.configMapKeyRef.key }}
+              name: {{ .Values.env.BROKER_ADDRESS.configMapKeyRef.name }}
+        - name: RABBITMQ_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: {{ .Values.env.BROKER_PORT_AMQP.configMapKeyRef.key }}
+              name: {{ .Values.env.BROKER_PORT_AMQP.configMapKeyRef.name }}
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.rabbitmq.cluster.name }}-default-user
+              key: username
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.rabbitmq.cluster.name }}-default-user
+              key: password
+        - name: KAFKA_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: {{ .Values.env.KAFKA_HOST.configMapKeyRef.key }}
+              name: {{ .Values.env.KAFKA_HOST.configMapKeyRef.name }}
+        - name: DATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: {{ .Values.env.DATABASE.configMapKeyRef.key }}
+              name: {{ .Values.env.DATABASE.configMapKeyRef.name }}
+        ports:
+        - containerPort: {{ .Values.containerPort }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+      volumes:
+        {{- toYaml .Values.volumes | nindent 8 }}

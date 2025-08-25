@@ -1,0 +1,22 @@
+---
+- name: Copy application binary
+  copy:
+    src: ./pig
+    dest: /home/student/tretyakov_am/pig
+    mode: '0755'
+
+- name: Copy resources
+  copy:
+    src: /builds/tretalek/pig/resources
+    dest: /home/student/tretyakov_am/
+    mode: '0755'
+
+- name: Create systemd unit file
+  become: yes
+  template:
+    src: pig_service.j2
+    dest: /etc/systemd/system/pig_tretyakov.service
+  notify:
+    - Reload systemd daemon
+    - Enable pig_tretyakov service
+    - Start pig_tretyakov service

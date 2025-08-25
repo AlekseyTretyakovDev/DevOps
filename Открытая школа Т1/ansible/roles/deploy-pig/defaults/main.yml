@@ -1,0 +1,3 @@
+---
+# defaults file for deploy-pig
+app_port: 8520

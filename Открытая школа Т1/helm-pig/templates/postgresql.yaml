@@ -1,0 +1,85 @@
+apiVersion: acid.zalan.do/v1
+kind: postgresql
+metadata:
+  name: {{ .Values.postgresql.clusterName }}
+spec:
+  teamId: "{{ .Values.postgresql.teamId }}"
+  volume:
+    size: {{ .Values.postgresql.volume.size }}
+    storageClass: {{ .Values.postgresql.volume.storageClass }}
+  numberOfInstances: {{ .Values.postgresql.numberOfInstances }}
+  users:
+    pig-user:
+      - superuser
+      - createdb
+  databases:
+    pig: pig-service
+  preparedDatabases: {}
+  postgresql:
+    version: "{{ .Values.postgresql.version }}"
+
+---
+
+# Создание PVC для PostgreSQL
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.volume.size }}
+  storageClassName: {{ .Values.postgresql.volume.storageClass }}
+
+---
+
+# Создание StatefulSet для PostgreSQL с привязкой PVC
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-sts
+spec:
+  serviceName: postgres-headless-svc
+  replicas: {{ .Values.postgresql.numberOfInstances }}
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: postgres
+        image: postgres:{{ .Values.postgresql.version }}
+        envFrom:
+        - secretRef:
+            name: postgres-secrets
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-data-pvc
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-svc
+  namespace: atretyakov
+spec:
+  selector:
+    app: postgres
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
+  type: ClusterIP

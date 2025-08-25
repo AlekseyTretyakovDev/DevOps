@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pig
+  namespace: atretyakov
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pig
+  template:
+    metadata:
+      labels:
+        app: pig
+    spec:
+      containers:
+      - name: pig
+        image: stud-gitlab.innoca.local:5005/tretalek/pig:0cbb0f13
+        volumeMounts: 
+        - name: config
+          mountPath: "/pigconfig"
+        env:
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              key: CustomPort
+              name: pig
+        ports:
+        - containerPort: 8008
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi" #
+            cpu: "100m"
+      volumes:
+      - name: config
+        configMap:
+          name: pig
+      imagePullSecrets:
+      - name: docker-registry-secret        

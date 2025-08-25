@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}
+  namespace: {{ .Values.namespace }}
+data:
+  CustomPort: "{{ .Values.containerPort }}"
+  BrokerAddress: "{{ .Values.rabbitmq.cluster.name }}.{{ .Values.rabbitmq.namespace }}.svc.cluster.local"
+  BrokerPortAMQP: "5672"
+  kafkaHost: "{{ .Values.kafka.name }}-kafka-bootstrap.kafka.svc"
+  database: "{{ .Values.postgresql.dbstring }}"

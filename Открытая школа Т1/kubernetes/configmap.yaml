@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pig
+  namespace: atretyakov
+data: 
+  CustomPort: "8008"

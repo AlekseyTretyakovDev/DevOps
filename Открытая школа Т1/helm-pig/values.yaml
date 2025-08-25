@@ -1,0 +1,167 @@
+global:
+  namespace:
+    kafka: kafka
+    default: atretyakov
+
+# Deployment settings
+replicaCount: 1
+
+image:
+  repository: stud-gitlab.innoca.local:5005/tretalek/pig
+  tag: "0cbb0f13"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: docker-registry-secret
+
+# Container settings
+containerPort: 8008
+env:
+  PORT:
+    configMapKeyRef:
+      key: CustomPort
+      name: helm-pig
+  BROKER_ADDRESS:
+    configMapKeyRef:
+      key: BrokerAddress
+      name: helm-pig
+  BROKER_PORT_AMQP:
+    configMapKeyRef:
+      key: BrokerPortAMQP
+      name: helm-pig
+  KAFKA_HOST:
+    configMapKeyRef:
+      key: kafkaHost
+      name: helm-pig
+  DATABASE:
+    configMapKeyRef:
+      key: database
+      name: helm-pig
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "128Mi"
+    cpu: "100m"
+
+# Volume settings
+volumes:
+  - name: config
+    configMap:
+      name: pig
+
+volumeMounts:
+  - name: config
+    mountPath: "/pigconfig"
+
+livenessProbe:
+  httpGet:
+    path: /internal/healthz
+    port: http
+readinessProbe:
+  httpGet:
+    path: /internal/healthz
+    port: http
+
+# Ingress settings
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: pig.tretyakov.helm
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: pig-nodeport-service-helm
+              port:
+                number: 80
+  tls: []
+
+# Service settings
+service:
+  name: pig-nodeport-service-helm
+  type: NodePort
+  port: 80
+  targetPort: 8008
+  nodePort: 31235
+  selector:
+    app: pig
+
+# Параметры RabbitMQ
+rabbitmq:
+  enabled: true
+  namespace: atretyakov
+  cluster:
+    name: rabbitmq-cluster
+    replicas: 1
+    persistence:
+      enabled: true
+      storageClassName: local-path
+      size: 8Gi
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "1"
+  ingress:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+    hosts:
+      - host: rabbitmq.tretyakov.helm
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rabbitmq-cluster-nodeport
+                port:
+                  number: 15672
+    tls: [] 
+  service:
+    enabled: true
+    name: rabbitmq-cluster-nodeport
+    type: NodePort
+    port: 15672
+    targetPort: 15672
+    nodePort: 31236
+    selector:
+      app.kubernetes.io/name: rabbitmq # Селектор для подов RabbitMQ
+
+# Параметры для кластера Kafka
+kafka:
+  name: kafka-cluster-tretyakov
+  namespace: kafka
+  replicas: 1
+  version: 3.9.0
+  metadataVersion: 3.9-IV0
+  storage:
+    size: 10Gi
+    class: local-path
+  listeners:
+    plain: {}
+    tls: {}
+
+kafkaNodePool:
+  name: dual-role-tretyakov
+  volumes:
+    type: persistent-claim
+    size: 10Gi
+
+postgresql:
+  dbstring: ""
+  namespace: atretyakov
+  clusterName: postgres-tretyakov
+  teamId: team-tretyakov
+  volume:
+    size: 1Gi
+    storageClass: local-path
+  numberOfInstances: 1
+  version: 17
